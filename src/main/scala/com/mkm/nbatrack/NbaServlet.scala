@@ -47,23 +47,15 @@ class NbaServlet extends NbatrackStack {
     } yield teamWon.name
     
     ("result" -> teamWonName.getOrElse("None")) ~ ("time" -> 1)
-
-    // TODO: redirect to /result with template accepting Matchup.result object
-
   }
 
-
-  before("/api/v1/tournament") {
-    contentType = "application/json"
-  }
   post("/api/v1/tournament") {
     val teams: List[Team] = for {
       team <- multiParams("team").toList
       teamId <- Teams.teamId(team)
     } yield Team(team, teamId)
 
-    // TODO: add pattern-match check against a list of allowed teams    
-    println(s"Touranment's winner: ${Tournament.winner(teams)}")
+    ("result" -> Tournament.winner(teams).map(_.name).getOrElse("None")) ~ ("time" -> 1)
   }
 
 }

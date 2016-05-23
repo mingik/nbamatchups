@@ -33,7 +33,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
     Teams.teamId(teamName) match {
       case Some(teamId) => compact(("result" -> StatsNBA.team(teamId)) ~ ("time" -> Instant.now.toString))
-      case None => JNothing
+      case None => compact(JNothing)
     }
       
   }
@@ -43,44 +43,55 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     val team1 = params("team1")
     val team2 = params("team2")
 
-    val teams: Option[Pair[Team, Team]] = for {
+    val teamWonName = for {
       team1Id <- Teams.teamId(team1)
       team2Id <- Teams.teamId(team2)
-    } yield (Team(team1, team2Id), Team(team2, team2Id))
-
-
-    val teamWonName: Option[String] = for {
-      teamPair <- teams
-      teamWon <- Matchup.result(teamPair)
+      teamWon <- Matchup.result((Team(team1, team2Id), Team(team2, team2Id)))
     } yield teamWon.name
-    
-    compact(("result" -> teamWonName.getOrElse("None")) ~ ("time" -> Instant.now.toString))
+
+    teamWonName match {
+      case Some(name) => compact(("result" -> name) ~ ("time" -> Instant.now.toString))
+      case None => compact(JNothing)
+    }
   }
 
   post("/api/v1/tournament") {
-    val teams: List[Team] = for {
+    val teams = for {
       team <- multiParams("team").toList
       teamId <- Teams.teamId(team)
     } yield Team(team, teamId)
 
-    compact(("result" -> Tournament.winner(teams).map(_.name).getOrElse("None")) ~ ("time" -> Instant.now.toString))
+    Tournament.winner(teams) match {
+      case Some(team) => compact(("result" -> team.name) ~ ("time" -> Instant.now.toString))
+      case None => compact(JNothing)
+    }
   }
-
 }
+
+///////////////////////////////////////////////////////////////////////
 
 object Matchup {
   def result(pair: Pair[Team, Team]): Option[Team] = {
-    // 1) Query stats.nba.com in order to get information about two teams
-    // 2) Perform analytics to determine the result
+    /*
+     * TODO:
+     * 1) Query stats.nba.com in order to get information about two teams
+     * 2) Perform analytics to determine the result
+     */
+    val team1Js = StatsNBA.team(pair._1)
+    val team2Js = StatsNBA.team(pair._2)
+
     Some(pair._1)
   }
 }
 
 object Tournament {
   def winner(teams: List[Team]): Option[Team] = {
-    // 1) Query stats.nba.com in order to get information about all teams
-    // 2) Perform anaylitcs to determine the winner of the tournament
-    teams match {
+    /*
+     *  TODO:
+     *  1) Query stats.nba.com in order to get information about all teams
+     *  2) Perform anaylitcs to determine the winner of the tournament
+     */
+    teams.sortBy(_.name) match {
       case firstTeam :: rest => Some(firstTeam)
       case _ => None
     }
@@ -131,14 +142,15 @@ object StatsNBA {
   val statsNbaURL = "http://stats.nba.com/stats/"
   val teamRosterURI = "commonteamroster/?"
   val currentSeasonURI = "&Season=2015-16"
+
   def teamIDURI(teamId: String) = s"TeamID=$teamId"
-  /*
-   * This method extracts team's infor from stats.nba.com and outputs JSON
-   */
+
   def team(teamId: String): JValue = {
-    //?TeamID=1610612737&Season=1995-96
+
     val teamStatsNBAURL = statsNbaURL + teamRosterURI + teamIDURI(teamId) + currentSeasonURI
-    println(s"Calling URL: $teamStatsNBAURL")
+
     parse(Source.fromURL(teamStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
   }
+
+  def team(t: Team): JValue = team(t.teamId)
 }

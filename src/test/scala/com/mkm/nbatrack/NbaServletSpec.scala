@@ -19,7 +19,12 @@ class NbaServletSpec extends ScalatraSpec { def is =
 
   def getTeam = get("/api/v1/team/BostonCeltics") {
     status must_== 200
-    body must contain("teamId")
+    body must contain("result")
+    body must contain("resource")
+    body must contain("parameters")
+    body must contain("1610612738")
+    body must contain(Teams.nameToId("BostonCeltics"))
+    body must contain("time")
   }
 
   def postMatchup = post("/api/v1/matchup", Map("team1" -> "BostonCeltics", "team2" -> "LosAngelesLakers")) {

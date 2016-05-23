@@ -5,8 +5,17 @@ import org.scalatra.json._
 
 import org.json4s._
 import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods.{parse, compact}
 
-class NbaServlet extends NbatrackStack {
+import java.time.Instant
+import java.nio.charset.StandardCharsets
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
+
+class NbaServlet extends NbatrackStack with FutureSupport {
+
+  protected implicit def executor = ExecutionContext.global
 
   get("/") {
     <html>
@@ -20,11 +29,10 @@ class NbaServlet extends NbatrackStack {
   }
 
   get("/api/v1/team/:team") {
-    val team = params("team")
+    val teamName = params("team")
 
-    //http://stats.nba.com/stats/commonteamroster/?TeamID=1610612737&Season=1995-96
-    Teams.teamId(team) match {
-      case Some(teamId) => StatsNBA.team(teamId)
+    Teams.teamId(teamName) match {
+      case Some(teamId) => compact(("result" -> StatsNBA.team(teamId)) ~ ("time" -> Instant.now.toString))
       case None => JNothing
     }
       
@@ -46,7 +54,7 @@ class NbaServlet extends NbatrackStack {
       teamWon <- Matchup.result(teamPair)
     } yield teamWon.name
     
-    ("result" -> teamWonName.getOrElse("None")) ~ ("time" -> 1)
+    compact(("result" -> teamWonName.getOrElse("None")) ~ ("time" -> Instant.now.toString))
   }
 
   post("/api/v1/tournament") {
@@ -55,12 +63,10 @@ class NbaServlet extends NbatrackStack {
       teamId <- Teams.teamId(team)
     } yield Team(team, teamId)
 
-    ("result" -> Tournament.winner(teams).map(_.name).getOrElse("None")) ~ ("time" -> 1)
+    compact(("result" -> Tournament.winner(teams).map(_.name).getOrElse("None")) ~ ("time" -> Instant.now.toString))
   }
 
 }
-
-case class Team(val name: String, val teamId: String)
 
 object Matchup {
   def result(pair: Pair[Team, Team]): Option[Team] = {
@@ -80,6 +86,8 @@ object Tournament {
     }
   }
 }
+
+case class Team(val name: String, val teamId: String)
 
 object Teams {
   val nameToId = Map(
@@ -120,7 +128,17 @@ object Teams {
 
 
 object StatsNBA {
+  val statsNbaURL = "http://stats.nba.com/stats/"
+  val teamRosterURI = "commonteamroster/?"
+  val currentSeasonURI = "&Season=2015-16"
+  def teamIDURI(teamId: String) = s"TeamID=$teamId"
+  /*
+   * This method extracts team's infor from stats.nba.com and outputs JSON
+   */
   def team(teamId: String): JValue = {
-    ("teamId" -> teamId) ~ ("status" -> "ok")
+    //?TeamID=1610612737&Season=1995-96
+    val teamStatsNBAURL = statsNbaURL + teamRosterURI + teamIDURI(teamId) + currentSeasonURI
+    println(s"Calling URL: $teamStatsNBAURL")
+    parse(Source.fromURL(teamStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
   }
 }

@@ -31,21 +31,21 @@ class NbaServlet extends NbatrackStack with FutureSupport {
   get("/api/v1/team/:team") {
     val teamName = params("team")
 
-    Teams.teamId(teamName) match {
-      case Some(teamId) => compact(("result" -> StatsNBA.team(teamId)) ~ ("time" -> Instant.now.toString))
-      case None => compact(JNothing)
+    StatsNBA.teamByName(teamName) match {
+      case JNothing => compact(JNothing)
+      case jValue: JValue => compact(("result" -> jValue) ~ ("time" -> Instant.now.toString))
     }
       
   }
 
   post("/api/v1/matchup") {
     // TODO: add pattern-match check agains a list of allowed teams
-    val team1 = params("team1")
-    val team2 = params("team2")
+    val team1Name = params("team1")
+    val team2Name = params("team2")
 
     val teamWonName = for {
-      team1Id <- Teams.teamId(team1)
-      team2Id <- Teams.teamId(team2)
+      team1Id <- StatsNBA.teamId(team1Name)
+      team2Id <- StatsNBA.teamId(team2Name)
       teamWon <- Matchup.result((Team(team1, team2Id), Team(team2, team2Id)))
     } yield teamWon.name
 
@@ -58,7 +58,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
   post("/api/v1/tournament") {
     val teams = for {
       team <- multiParams("team").toList
-      teamId <- Teams.teamId(team)
+      teamId <- StatsNBA.teamId(team)
     } yield Team(team, teamId)
 
     Tournament.winner(teams) match {
@@ -80,7 +80,9 @@ object Matchup {
     val team1Js = StatsNBA.team(pair._1)
     val team2Js = StatsNBA.team(pair._2)
 
-    Some(pair._1)
+    var winner: Team = pair._1
+
+    Some(winner)
   }
 }
 
@@ -92,7 +94,11 @@ object Tournament {
      *  2) Perform anaylitcs to determine the winner of the tournament
      */
     teams.sortBy(_.name) match {
-      case firstTeam :: rest => Some(firstTeam)
+      case firstTeam :: rest => {
+
+        val winner = firstTeam
+        Some(winner)
+      }
       case _ => None
     }
   }
@@ -100,7 +106,13 @@ object Tournament {
 
 case class Team(val name: String, val teamId: String)
 
-object Teams {
+object StatsNBA {
+  val statsNbaURL = "http://stats.nba.com/stats/"
+
+  val teamRosterURI = "commonteamroster/?"
+
+  val currentSeasonURI = "&Season=2015-16"
+
   val nameToId = Map(
     "AtlantaHawks"          -> "1610612737",
     "BostonCeltics"         -> "1610612738",
@@ -135,13 +147,6 @@ object Teams {
   )
 
   def teamId(teamName: String): Option[String] = nameToId.get(teamName)
-}
-
-
-object StatsNBA {
-  val statsNbaURL = "http://stats.nba.com/stats/"
-  val teamRosterURI = "commonteamroster/?"
-  val currentSeasonURI = "&Season=2015-16"
 
   def teamIDURI(teamId: String) = s"TeamID=$teamId"
 
@@ -153,4 +158,7 @@ object StatsNBA {
   }
 
   def team(t: Team): JValue = team(t.teamId)
+
+  def teamByName(teamName: String): JValue =
+    teamId(teamName).map(team(_))
 }

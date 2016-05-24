@@ -26,7 +26,7 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body must contain("resource")
     body must contain("parameters")
     body must contain("1610612738")
-    body must contain(Teams.nameToId("BostonCeltics"))
+    body must contain(StatsNBA.nameToId("BostonCeltics"))
     body must contain("time")
   }
 

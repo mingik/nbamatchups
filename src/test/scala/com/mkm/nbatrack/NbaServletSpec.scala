@@ -63,8 +63,9 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body.size must_== 0
   }
 
-  def postPlayerMatchupValid = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "LeBronJames")) {
+  def postPlayerMatchupValid = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "DarkoMilicic")) {
     status must_== 200
+        println(s"**** body = $body")
     body must contain("LeBronJames")
   }
 

@@ -91,7 +91,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     val playerWonName = for {
       player1Id <- StatsNBA.playerId(player1Name)
       player2Id <- StatsNBA.playerId(player2Name)
-      playerWon <- PlayerMatchup.result((Player(player1Name, player2Id), Player(player2Name, player2Id)))
+      playerWon <- PlayerMatchup.result((Player(player1Name, player1Id), Player(player2Name, player2Id)))
     } yield playerWon.name
 
     playerWonName match {
@@ -144,6 +144,7 @@ object Tournament {
 }
 
 object PlayerMatchup {
+
   def result(pair: Pair[Player, Player]): Option[Player] = {
     /*
      * TODO:
@@ -153,6 +154,10 @@ object PlayerMatchup {
     val player1Js = StatsNBA.player(pair._1)
     val player2Js = StatsNBA.player(pair._2)
 
+    val player1Points = player1Js \ "resultSets" 
+
+    val player2Points = player2Js \ "resultSets" 
+
     var winner: Player = pair._1
 
     Some(winner)
@@ -160,6 +165,7 @@ object PlayerMatchup {
 }
 
 object StatsNBA {
+
   val statsNbaURL = "http://stats.nba.com/stats/"
 
   val teamRosterURI = "commonteamroster/?"
@@ -218,7 +224,8 @@ object StatsNBA {
   ///////////////////////
 
   val playerNameToId = Map(
-    "LeBronJames" -> "2544"
+    "LeBronJames" -> "2544",
+    "DarkoMilicic" -> "2545"
   )
 
   def playerId(playerName: String): Option[String] = playerNameToId.get(playerName)
@@ -243,5 +250,4 @@ object StatsNBA {
   def regularSeasonTypeURI = "&SeasonType=Regular+Season"
 
   def nbaLeagueURI = "&LeagueId=00"
-
 }

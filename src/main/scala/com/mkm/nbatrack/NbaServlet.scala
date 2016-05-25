@@ -145,22 +145,52 @@ object Tournament {
 
 object PlayerMatchup {
 
+  case class PlayerStats(val points: Option[Double], val assists: Option[Double], val rebounds: Option[Double])
+
+  // TODO: add more parameters to player's mojo calculation
+  def playerMojo(playerStats: PlayerStats): Option[Double] = {
+    for {
+      playerPoints <- playerStats.points
+      playerRebounds <- playerStats.rebounds
+      playerAssists <- playerStats.assists
+    } yield (playerPoints + playerAssists + playerRebounds)
+  }
+
   def result(pair: Pair[Player, Player]): Option[Player] = {
     /*
-     * TODO:
      * 1) Query stats.nba.com in order to get information about two players
      * 2) Perform analytics to determine the result
      */
     val player1Js = StatsNBA.player(pair._1)
     val player2Js = StatsNBA.player(pair._2)
 
-    val player1Points = player1Js \ "resultSets" 
+    val player1Stats = playerStats(player1Js)
+    val player2Stats = playerStats(player2Js)
 
-    val player2Points = player2Js \ "resultSets" 
+    val winner = for {
+      player1Mojo <- playerMojo(player1Stats)
+      player2Mojo <- playerMojo(player2Stats)
+    } yield if (player1Mojo > player2Mojo) pair._1 else pair._2
 
-    var winner: Player = pair._1
+    winner
+  }
 
-    Some(winner)
+  implicit val formats = DefaultFormats
+
+  def playerStats(playerJs: JValue): PlayerStats = {
+    val resultSetsJs = playerJs \ "resultSets"
+
+    val rowSetJs = resultSetsJs(1) \ "rowSet"
+
+    val statsJs = rowSetJs(0)
+
+    val points = statsJs(3).extractOpt[Double]
+
+    val assists = statsJs(4).extractOpt[Double]
+
+    val rebounds = statsJs(5).extractOpt[Double]
+
+    PlayerStats(points, assists, rebounds)
   }
 }
 
@@ -223,9 +253,13 @@ object StatsNBA {
 
   ///////////////////////
 
+  // TODO: list all players
   val playerNameToId = Map(
     "LeBronJames" -> "2544",
-    "DarkoMilicic" -> "2545"
+    "DarkoMilicic" -> "2545",
+    "CarmeloAnthony" -> "2546",
+    "ChrisBosh" -> "2547",
+    "DwyaneWade" -> "2548"
   )
 
   def playerId(playerName: String): Option[String] = playerNameToId.get(playerName)

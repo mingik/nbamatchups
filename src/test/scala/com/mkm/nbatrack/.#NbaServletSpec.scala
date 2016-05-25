@@ -1,1 +1,0 @@
-mintik@mintik-HP.4846:1464139977

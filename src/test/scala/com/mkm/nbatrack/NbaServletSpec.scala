@@ -12,7 +12,8 @@ class NbaServletSpec extends ScalatraSpec { def is =
   "/player/:invlaidplaye should return empty JSON" ! getPlayerInvalid^
   "/team/matchup should return valid JSON"         ! postTeamMatchupValid^
   "/team/matchup invalid should return valid JSON" ! postTeamMatchupInvalid^
-  "/player/matchup should return valid JSON"       ! postPlayerMatchupValid^
+  "/player/matchup should return valid JSON"       ! postPlayerMatchupValid1^
+  "/player/matchup should return valid JSON"       ! postPlayerMatchupValid2^
   "/player/matchup invalid should return valid JSON" ! postPlayerMatchupInvalid^
   "/team/tournament should return valid JSON"      ! postTournamentValid^
   "/team/tournament invalid should return valid JSON" ! postTournamentInvalid^
@@ -63,9 +64,13 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body.size must_== 0
   }
 
-  def postPlayerMatchupValid = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "DarkoMilicic")) {
+  def postPlayerMatchupValid1 = post("/api/v1/player/matchup", Map("player1" -> "DarkoMilicic", "player2" -> "CarmeloAnthony")) {
     status must_== 200
-        println(s"**** body = $body")
+    body must contain("CarmeloAnthony")
+  }
+
+  def postPlayerMatchupValid2 = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "DarkoMilicic")) {
+    status must_== 200
     body must contain("LeBronJames")
   }
 
@@ -81,7 +86,6 @@ class NbaServletSpec extends ScalatraSpec { def is =
 
    def postTournamentInvalid = post("/api/v1/team/tournament", ("team","BC"), ("a","b"), ("team","LAL"), ("c","d"), ("team","NYK")) {
      status must_== 200
-     println(s"body = $body")
      body.size must_== 0
    }
 }

@@ -28,6 +28,8 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     </html>
   }
 
+//////////////////////////////////////////////////////////////
+
   get("/api/v1/team/:team") {
     val teamName = params("team")
 
@@ -38,6 +40,20 @@ class NbaServlet extends NbatrackStack with FutureSupport {
       
   }
 
+  get("/api/v1/player/:player") {
+    val playerName = params("player")
+
+    StatsNBA.playerByName(playerName) match {
+      case JNothing => compact(JNothing)
+      case jValue: JValue => compact(("result" -> jValue) ~ ("time" -> Instant.now.toString))
+    }
+      
+  }
+
+
+
+//////////////////////////////////////////////////////////////
+
   post("/api/v1/matchup") {
     // TODO: add pattern-match check agains a list of allowed teams
     val team1Name = params("team1")
@@ -46,7 +62,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     val teamWonName = for {
       team1Id <- StatsNBA.teamId(team1Name)
       team2Id <- StatsNBA.teamId(team2Name)
-      teamWon <- Matchup.result((Team(team1, team2Id), Team(team2, team2Id)))
+      teamWon <- Matchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
     } yield teamWon.name
 
     teamWonName match {
@@ -113,7 +129,7 @@ object StatsNBA {
 
   val currentSeasonURI = "&Season=2015-16"
 
-  val nameToId = Map(
+  val teamNameToId = Map(
     "AtlantaHawks"          -> "1610612737",
     "BostonCeltics"         -> "1610612738",
     "BrooklynNets"          -> "1610612751",
@@ -146,7 +162,7 @@ object StatsNBA {
     "WashingtonWizards"     -> "1610612764"
   )
 
-  def teamId(teamName: String): Option[String] = nameToId.get(teamName)
+  def teamId(teamName: String): Option[String] = teamNameToId.get(teamName)
 
   def teamIDURI(teamId: String) = s"TeamID=$teamId"
 
@@ -161,4 +177,32 @@ object StatsNBA {
 
   def teamByName(teamName: String): JValue =
     teamId(teamName).map(team(_))
+
+  ///////////////////////
+
+  val playerNameToId = Map(
+    "LeBronJames" -> "2544"
+  )
+
+  def playerId(playerName: String): Option[String] = playerNameToId.get(playerName)
+
+  def playerByName(playerName: String): JValue =
+    playerId(playerName).map(player(_))
+
+  def playerURI = "commonplayerinfo/?"
+
+  def playerIDURI(playerId: String) = s"PlayerId=$playerId"
+
+  def player(playerId: String): JValue = {
+    val playerStatsNBAURL = statsNbaURL + playerURI + playerIDURI(playerId)
+
+    parse(Source.fromURL(playerStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
+  }
+
+  ///////////////////////
+
+  def regularSeasonTypeURI = "&SeasonType=Regular+Season"
+
+  def nbaLeagueURI = "&LeagueId=00"
+
 }

@@ -8,6 +8,8 @@ class NbaServletSpec extends ScalatraSpec { def is =
   "/ should return status 200"                     ! root200^
   "/team/:team should return valid JSON"           ! getTeamValid^
   "/team/:invalidteam should return empty JSON"    ! getTeamInvalid^
+  "/player/:player should return valid JSON"       ! getPlayerValid^
+  "/player/:invlaidplaye should return empty JSON" ! getPlayerInvalid^
   "/matchup should return valid JSON"              ! postMatchupValid^
   "/matchup invalid should return valid JSON"      ! postMatchupInvalid^
   "/tournament should return valid JSON"           ! postTournamentValid^
@@ -26,11 +28,25 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body must contain("resource")
     body must contain("parameters")
     body must contain("1610612738")
-    body must contain(StatsNBA.nameToId("BostonCeltics"))
+    body must contain(StatsNBA.teamNameToId("BostonCeltics"))
     body must contain("time")
   }
 
   def getTeamInvalid = get("/api/v1/team/BC") {
+    status must_== 200
+    body.size must_== 0
+  }
+
+  def getPlayerValid = get("/api/v1/player/LeBronJames") {
+    status must_== 200
+    body must contain("result")
+    body must contain("resource")
+    body must contain("parameters")
+    body must contain(StatsNBA.playerNameToId("LeBronJames"))
+    body must contain("time")
+  }
+
+  def getPlayerInvalid = get("/api/v1/player/LBJ") {
     status must_== 200
     body.size must_== 0
   }

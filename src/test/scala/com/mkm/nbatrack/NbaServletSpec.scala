@@ -10,10 +10,12 @@ class NbaServletSpec extends ScalatraSpec { def is =
   "/team/:invalidteam should return empty JSON"    ! getTeamInvalid^
   "/player/:player should return valid JSON"       ! getPlayerValid^
   "/player/:invlaidplaye should return empty JSON" ! getPlayerInvalid^
-  "/matchup should return valid JSON"              ! postMatchupValid^
-  "/matchup invalid should return valid JSON"      ! postMatchupInvalid^
-  "/tournament should return valid JSON"           ! postTournamentValid^
-  "/tournament invalid should return valid JSON"   ! postTournamentInvalid^
+  "/team/matchup should return valid JSON"         ! postTeamMatchupValid^
+  "/team/matchup invalid should return valid JSON" ! postTeamMatchupInvalid^
+  "/player/matchup should return valid JSON"       ! postPlayerMatchupValid^
+  "/player/matchup invalid should return valid JSON" ! postPlayerMatchupInvalid^
+  "/team/tournament should return valid JSON"      ! postTournamentValid^
+  "/team/tournament invalid should return valid JSON" ! postTournamentInvalid^
                                                    end
 
   addServlet(classOf[NbaServlet], "/*")
@@ -51,22 +53,32 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body.size must_== 0
   }
 
-  def postMatchupValid = post("/api/v1/matchup", Map("team1" -> "BostonCeltics", "team2" -> "LosAngelesLakers")) {
+  def postTeamMatchupValid = post("/api/v1/team/matchup", Map("team1" -> "BostonCeltics", "team2" -> "LosAngelesLakers")) {
     status must_== 200
     body must contain("BostonCeltics")
   }
 
-  def postMatchupInvalid = post("/api/v1/matchup", Map("team1" -> "BC", "team2" -> "LosAngelesLakers")) {
+  def postTeamMatchupInvalid = post("/api/v1/team/matchup", Map("team1" -> "BC", "team2" -> "LosAngelesLakers")) {
     status must_== 200
     body.size must_== 0
   }
 
-   def postTournamentValid = post("/api/v1/tournament", ("team","BostonCeltics"), ("a","b"), ("team","LosAngelesLakers"), ("c","d"), ("team","NewYorkKnicks")) {
+  def postPlayerMatchupValid = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "LeBronJames")) {
+    status must_== 200
+    body must contain("LeBronJames")
+  }
+
+  def postPlayerMatchupInvalid = post("/api/v1/player/matchup", Map("player1" -> "LBJ", "player2" -> "LBJ")) {
+    status must_== 200
+    body.size must_== 0
+  }
+
+   def postTournamentValid = post("/api/v1/team/tournament", ("team","BostonCeltics"), ("a","b"), ("team","LosAngelesLakers"), ("c","d"), ("team","NewYorkKnicks")) {
      status must_== 200
      body must contain("BostonCeltics")
    }
 
-   def postTournamentInvalid = post("/api/v1/tournament", ("team","BC"), ("a","b"), ("team","LAL"), ("c","d"), ("team","NYK")) {
+   def postTournamentInvalid = post("/api/v1/team/tournament", ("team","BC"), ("a","b"), ("team","LAL"), ("c","d"), ("team","NYK")) {
      status must_== 200
      println(s"body = $body")
      body.size must_== 0

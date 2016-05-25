@@ -54,15 +54,15 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
 //////////////////////////////////////////////////////////////
 
-  post("/api/v1/matchup") {
-    // TODO: add pattern-match check agains a list of allowed teams
+  post("/api/v1/team/matchup") {
+
     val team1Name = params("team1")
     val team2Name = params("team2")
 
     val teamWonName = for {
       team1Id <- StatsNBA.teamId(team1Name)
       team2Id <- StatsNBA.teamId(team2Name)
-      teamWon <- Matchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
+      teamWon <- TeamMatchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
     } yield teamWon.name
 
     teamWonName match {
@@ -71,7 +71,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     }
   }
 
-  post("/api/v1/tournament") {
+  post("/api/v1/team/tournament") {
     val teams = for {
       team <- multiParams("team").toList
       teamId <- StatsNBA.teamId(team)
@@ -82,11 +82,34 @@ class NbaServlet extends NbatrackStack with FutureSupport {
       case None => compact(JNothing)
     }
   }
+
+  post("/api/v1/player/matchup") {
+
+    val player1Name = params("player1")
+    val player2Name = params("player2")
+
+    val playerWonName = for {
+      player1Id <- StatsNBA.playerId(player1Name)
+      player2Id <- StatsNBA.playerId(player2Name)
+      playerWon <- PlayerMatchup.result((Player(player1Name, player2Id), Player(player2Name, player2Id)))
+    } yield playerWon.name
+
+    playerWonName match {
+      case Some(name) => compact(("result" -> name) ~ ("time" -> Instant.now.toString))
+      case None => compact(JNothing)
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
 
-object Matchup {
+case class Team(val name: String, val teamId: String)
+
+case class Player(val name: String, val playerId: String)
+
+//////////////////////////////////////////////////////////////////////
+
+object TeamMatchup {
   def result(pair: Pair[Team, Team]): Option[Team] = {
     /*
      * TODO:
@@ -120,7 +143,21 @@ object Tournament {
   }
 }
 
-case class Team(val name: String, val teamId: String)
+object PlayerMatchup {
+  def result(pair: Pair[Player, Player]): Option[Player] = {
+    /*
+     * TODO:
+     * 1) Query stats.nba.com in order to get information about two players
+     * 2) Perform analytics to determine the result
+     */
+    val player1Js = StatsNBA.player(pair._1)
+    val player2Js = StatsNBA.player(pair._2)
+
+    var winner: Player = pair._1
+
+    Some(winner)
+  }
+}
 
 object StatsNBA {
   val statsNbaURL = "http://stats.nba.com/stats/"
@@ -198,6 +235,8 @@ object StatsNBA {
 
     parse(Source.fromURL(playerStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
   }
+
+  def player(p: Player): JValue = player(p.playerId)
 
   ///////////////////////
 

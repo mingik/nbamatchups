@@ -27,12 +27,13 @@ class NbaServletSpec extends ScalatraSpec { def is =
 
   def getTeamValid = get("/api/v1/team/BostonCeltics") {
     status must_== 200
+
     body must contain("result")
     body must contain("resource")
     body must contain("parameters")
     body must contain("1610612738")
     body must contain(StatsNBA.teamNameToId("BostonCeltics"))
-    body must contain("time")
+    body must contain("latency")
   }
 
   def getTeamInvalid = get("/api/v1/team/BC") {
@@ -46,7 +47,7 @@ class NbaServletSpec extends ScalatraSpec { def is =
     body must contain("resource")
     body must contain("parameters")
     body must contain(StatsNBA.playerNameToId("LeBronJames"))
-    body must contain("time")
+    body must contain("latency")
   }
 
   def getPlayerInvalid = get("/api/v1/player/LBJ") {
@@ -71,6 +72,7 @@ class NbaServletSpec extends ScalatraSpec { def is =
 
   def postPlayerMatchupValid2 = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "DarkoMilicic")) {
     status must_== 200
+    println(body)
     body must contain("LeBronJames")
   }
 

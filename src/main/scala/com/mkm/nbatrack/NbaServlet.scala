@@ -8,6 +8,7 @@ import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods.{parse, compact}
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.nio.charset.StandardCharsets
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +36,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
     StatsNBA.teamByName(teamName) match {
       case JNothing => compact(JNothing)
-      case jValue: JValue => compact(("result" -> jValue) ~ ("time" -> Instant.now.toString))
+      case jValue: JValue => compact(jValue)
     }
       
   }
@@ -45,7 +46,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
     StatsNBA.playerByName(playerName) match {
       case JNothing => compact(JNothing)
-      case jValue: JValue => compact(("result" -> jValue) ~ ("time" -> Instant.now.toString))
+      case jValue: JValue => compact(jValue)
     }
       
   }
@@ -178,7 +179,7 @@ object PlayerMatchup {
   implicit val formats = DefaultFormats
 
   def playerStats(playerJs: JValue): PlayerStats = {
-    val resultSetsJs = playerJs \ "resultSets"
+    val resultSetsJs = playerJs \ "response" \ "resultSets"
 
     val rowSetJs = resultSetsJs(1) \ "rowSet"
 
@@ -243,7 +244,11 @@ object StatsNBA {
 
     val teamStatsNBAURL = statsNbaURL + teamRosterURI + teamIDURI(teamId) + currentSeasonURI
 
-    parse(Source.fromURL(teamStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
+    val prior = Instant.now
+
+    val response = parse(Source.fromURL(teamStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
+
+    ("response" -> response) ~ ("latency" -> ChronoUnit.MILLIS.between(prior, Instant.now))
   }
 
   def team(t: Team): JValue = team(t.teamId)
@@ -274,7 +279,11 @@ object StatsNBA {
   def player(playerId: String): JValue = {
     val playerStatsNBAURL = statsNbaURL + playerURI + playerIDURI(playerId)
 
-    parse(Source.fromURL(playerStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
+    val prior = Instant.now
+
+    val response = parse(Source.fromURL(playerStatsNBAURL, StandardCharsets.UTF_8.name()).mkString)
+
+    ("response" -> response) ~ ("latency" -> ChronoUnit.MILLIS.between(prior, Instant.now))
   }
 
   def player(p: Player): JValue = player(p.playerId)

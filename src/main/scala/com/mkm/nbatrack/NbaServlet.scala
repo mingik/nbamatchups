@@ -29,7 +29,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     </html>
   }
 
-//////////////////////////////////////////////////////////////
+/////////////////////// Info ///////////////////////////////
 
   get("/api/v1/team/:team") {
     val teamName = params("team")
@@ -51,26 +51,41 @@ class NbaServlet extends NbatrackStack with FutureSupport {
       
   }
 
-
-
-//////////////////////////////////////////////////////////////
+//////////////////////// Matchup ////////////////////////////////
 
   post("/api/v1/team/matchup") {
 
     val team1Name = params("team1")
     val team2Name = params("team2")
 
-    val teamWonName = for {
+    val teamWonJValue = for {
       team1Id <- StatsNBA.teamId(team1Name)
       team2Id <- StatsNBA.teamId(team2Name)
-      teamWon <- TeamMatchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
-    } yield teamWon.name
+    } yield TeamMatchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
 
-    teamWonName match {
-      case Some(name) => compact(("result" -> name) ~ ("time" -> Instant.now.toString))
+    teamWonJValue match {
+      case Some(jValue) => compact(jValue)
       case None => compact(JNothing)
     }
   }
+
+  post("/api/v1/player/matchup") {
+
+    val player1Name = params("player1")
+    val player2Name = params("player2")
+
+    val playerWonJValue = for {
+      player1Id <- StatsNBA.playerId(player1Name)
+      player2Id <- StatsNBA.playerId(player2Name)
+    } yield PlayerMatchup.result((Player(player1Name, player1Id), Player(player2Name, player2Id)))
+
+    playerWonJValue match {
+      case Some(jValue) => compact(jValue)
+      case None => compact(JNothing)
+    }
+  }
+
+//////////////////////// Tournament ////////////////////////////////
 
   post("/api/v1/team/tournament") {
     val teams = for {
@@ -84,22 +99,6 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     }
   }
 
-  post("/api/v1/player/matchup") {
-
-    val player1Name = params("player1")
-    val player2Name = params("player2")
-
-    val playerWonName = for {
-      player1Id <- StatsNBA.playerId(player1Name)
-      player2Id <- StatsNBA.playerId(player2Name)
-      playerWon <- PlayerMatchup.result((Player(player1Name, player1Id), Player(player2Name, player2Id)))
-    } yield playerWon.name
-
-    playerWonName match {
-      case Some(name) => compact(("result" -> name) ~ ("time" -> Instant.now.toString))
-      case None => compact(JNothing)
-    }
-  }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -111,7 +110,7 @@ case class Player(val name: String, val playerId: String)
 //////////////////////////////////////////////////////////////////////
 
 object TeamMatchup {
-  def result(pair: Pair[Team, Team]): Option[Team] = {
+  def result(pair: Pair[Team, Team]): JValue = {
     /*
      * TODO:
      * 1) Query stats.nba.com in order to get information about two teams
@@ -120,9 +119,15 @@ object TeamMatchup {
     val team1Js = StatsNBA.team(pair._1)
     val team2Js = StatsNBA.team(pair._2)
 
-    var winner: Team = pair._1
+    val prior = Instant.now
 
-    Some(winner)
+    // TODO: add algorithm for calculating the winner
+    var winner: Option[Team] = Some(pair._1)
+
+    winner match {
+      case Some(winner) => ("response" -> winner.name) ~ ("latency" -> ChronoUnit.MILLIS.between(prior, Instant.now))
+      case None => JNothing
+    }
   }
 }
 
@@ -157,7 +162,7 @@ object PlayerMatchup {
     } yield (playerPoints + playerAssists + playerRebounds)
   }
 
-  def result(pair: Pair[Player, Player]): Option[Player] = {
+  def result(pair: Pair[Player, Player]): JValue = {
     /*
      * 1) Query stats.nba.com in order to get information about two players
      * 2) Perform analytics to determine the result
@@ -165,15 +170,20 @@ object PlayerMatchup {
     val player1Js = StatsNBA.player(pair._1)
     val player2Js = StatsNBA.player(pair._2)
 
+    val prior = Instant.now
+
     val player1Stats = playerStats(player1Js)
     val player2Stats = playerStats(player2Js)
 
-    val winner = for {
+    val winnerOpt = for {
       player1Mojo <- playerMojo(player1Stats)
       player2Mojo <- playerMojo(player2Stats)
     } yield if (player1Mojo > player2Mojo) pair._1 else pair._2
 
-    winner
+    winnerOpt match {
+      case Some(winner) => ("response" -> winner.name) ~ ("latency" -> ChronoUnit.MILLIS.between(prior, Instant.now))
+      case None => JNothing
+    }
   }
 
   implicit val formats = DefaultFormats

@@ -22,11 +22,17 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     <html>
       <body>
         <h1>Hello, world!</h1>
-        Say <a href="hello-scalate">hello to Scalate</a>.
+        Greet lucky <a href="/greet/me">me</a>.
 
         Main page will contain two submit forms for two teams.
       </body>
     </html>
+  }
+
+  get("/greet/:whom") {
+    val lucky =
+      for (i <- (1 to 8).toList) yield scala.util.Random.nextInt(48) + 1
+    layoutTemplate("greeter.html", "whom" -> params("whom"), "lucky" -> lucky)
   }
 
 /////////////////////// Info ///////////////////////////////

@@ -18,21 +18,15 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
   protected implicit def executor = ExecutionContext.global
 
+/////////////////////////// external API //////////////////////////////////
+
   get("/") {
     <html>
       <body>
-        <h1>Hello, world!</h1>
-        Greet lucky <a href="/greet/me">me</a>.
-
-        Main page will contain two submit forms for two teams.
+        <h1>Try <a href="/api/v1/team/matchup/random">random</a> team matchup!</h1>
+        <h1>Try <a href="/api/v1/player/matchup/random">random</a> player matchup!</h1>
       </body>
     </html>
-  }
-
-  get("/greet/:whom") {
-    val lucky =
-      for (i <- (1 to 8).toList) yield scala.util.Random.nextInt(48) + 1
-    layoutTemplate("greeter.html", "whom" -> params("whom"), "lucky" -> lucky)
   }
 
 /////////////////////// Info ///////////////////////////////
@@ -59,6 +53,19 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
 //////////////////////// Matchup ////////////////////////////////
 
+  get("/api/v1/team/matchup/random") {
+    contentType="text/html"
+
+    val randomIdxOne = scala.util.Random.nextInt(StatsNBA.teams.size)
+    val randomIdxTwo = if (randomIdxOne == 0) (randomIdxOne + 1) else (randomIdxOne - 1)
+
+    val matchup = List(
+      StatsNBA.teams(randomIdxOne),
+      StatsNBA.teams(randomIdxTwo))
+
+    layoutTemplate("random.html", "matchup" -> matchup)
+  }
+
   post("/api/v1/team/matchup") {
 
     val team1Name = params("team1")
@@ -73,6 +80,19 @@ class NbaServlet extends NbatrackStack with FutureSupport {
       case Some(jValue) => compact(jValue)
       case None => compact(JNothing)
     }
+  }
+
+  get("/api/v1/player/matchup/random") {
+    contentType="text/html"
+
+    val randomIdxOne = scala.util.Random.nextInt(StatsNBA.players.size)
+    val randomIdxTwo = if (randomIdxOne == 0) (randomIdxOne + 1) else (randomIdxOne - 1)
+
+    val matchup = List(
+      StatsNBA.players(randomIdxOne),
+      StatsNBA.players(randomIdxTwo))
+
+    layoutTemplate("random.html", "matchup" -> matchup)
   }
 
   post("/api/v1/player/matchup") {
@@ -137,24 +157,6 @@ object TeamMatchup {
   }
 }
 
-object Tournament {
-  def winner(teams: List[Team]): Option[Team] = {
-    /*
-     *  TODO:
-     *  1) Query stats.nba.com in order to get information about all teams
-     *  2) Perform anaylitcs to determine the winner of the tournament
-     */
-    teams.sortBy(_.name) match {
-      case firstTeam :: rest => {
-
-        val winner = firstTeam
-        Some(winner)
-      }
-      case _ => None
-    }
-  }
-}
-
 object PlayerMatchup {
 
   case class PlayerStats(val points: Option[Double], val assists: Option[Double], val rebounds: Option[Double])
@@ -211,6 +213,26 @@ object PlayerMatchup {
   }
 }
 
+object Tournament {
+  def winner(teams: List[Team]): Option[Team] = {
+    /*
+     *  TODO:
+     *  1) Query stats.nba.com in order to get information about all teams
+     *  2) Perform anaylitcs to determine the winner of the tournament
+     */
+    teams.sortBy(_.name) match {
+      case firstTeam :: rest => {
+
+        val winner = firstTeam
+        Some(winner)
+      }
+      case _ => None
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////
+
 object StatsNBA {
 
   val statsNbaURL = "http://stats.nba.com/stats/"
@@ -252,6 +274,8 @@ object StatsNBA {
     "WashingtonWizards"     -> "1610612764"
   )
 
+  val teams = teamNameToId.keys.toArray
+
   def teamId(teamName: String): Option[String] = teamNameToId.get(teamName)
 
   def teamIDURI(teamId: String) = s"TeamID=$teamId"
@@ -272,7 +296,7 @@ object StatsNBA {
   def teamByName(teamName: String): JValue =
     teamId(teamName).map(team(_))
 
-  ///////////////////////
+  ///////////////////////////////////////////////////////////////
 
   // TODO: list all players
   val playerNameToId = Map(
@@ -282,6 +306,8 @@ object StatsNBA {
     "ChrisBosh" -> "2547",
     "DwyaneWade" -> "2548"
   )
+
+  val players = playerNameToId.keys.toArray
 
   def playerId(playerName: String): Option[String] = playerNameToId.get(playerName)
 

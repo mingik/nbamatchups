@@ -1,0 +1,8 @@
+-@ val matchup: List[String]
+- attributes("title") = "Random matchup" 
+
+%h1 Matchup
+%p You've created your first Matchup:
+%ul
+  - for (side <- matchup)
+    %li #{side}

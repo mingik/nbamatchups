@@ -1,0 +1,13 @@
+-@val players: List[String]
+- attributes("title") = "Player matchup"
+
+%h1 Player Matchup:
+
+%form{:action => "/api/v1/player/matchup", :method => "post"}
+  %select{:name => "player1"}
+    - for (player <- players)
+      %option{:value => {player}} #{player}
+  %select{:name => "player2"}
+    - for (player <- players)
+      %option{:value => {player}} #{player}
+  %input{:type => "submit", :value => "Submit"}

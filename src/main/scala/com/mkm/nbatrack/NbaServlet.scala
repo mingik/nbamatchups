@@ -23,8 +23,14 @@ class NbaServlet extends NbatrackStack with FutureSupport {
   get("/") {
     <html>
       <body>
-        <h1>Try <a href="/api/v1/team/matchup/random">random</a> team matchup!</h1>
-        <h1>Try <a href="/api/v1/player/matchup/random">random</a> player matchup!</h1>
+        <h1>Try <a href="/team/matchup/random">random</a> team matchup!</h1>
+        <h1>Try <a href="/player/matchup/random">random</a> player matchup!</h1>
+	
+	<h2><a href="/team/matchup">Create your own team matchup. </a></h2>
+
+	<br/>
+
+	<h2><a href="/player/matchup">Create your own player matchup. </a></h2>
       </body>
     </html>
   }
@@ -53,7 +59,13 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
 //////////////////////// Matchup ////////////////////////////////
 
-  get("/api/v1/team/matchup/random") {
+  get("/team/matchup") {
+    contentType="text/html"
+
+    layoutTemplate("team_matchup.html", "teams" -> StatsNBA.teamNameToId.keys.toList)
+  }
+
+  get("/team/matchup/random") {
     contentType="text/html"
 
     val randomIdxOne = scala.util.Random.nextInt(StatsNBA.teams.size)
@@ -74,7 +86,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     val teamWonJValue = for {
       team1Id <- StatsNBA.teamId(team1Name)
       team2Id <- StatsNBA.teamId(team2Name)
-    } yield TeamMatchup.result((Team(team1Name, team2Id), Team(team2Name, team2Id)))
+    } yield TeamMatchup.resultJV((Team(team1Name, team2Id), Team(team2Name, team2Id)))
 
     teamWonJValue match {
       case Some(jValue) => compact(jValue)
@@ -82,7 +94,15 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     }
   }
 
-  get("/api/v1/player/matchup/random") {
+ ////////////////////////////
+
+  get("/player/matchup") {
+    contentType="text/html"
+
+    layoutTemplate("player_matchup.html", "players" -> StatsNBA.playerNameToId.keys.toList)
+  }
+
+  get("/player/matchup/random") {
     contentType="text/html"
 
     val randomIdxOne = scala.util.Random.nextInt(StatsNBA.players.size)
@@ -136,7 +156,22 @@ case class Player(val name: String, val playerId: String)
 //////////////////////////////////////////////////////////////////////
 
 object TeamMatchup {
-  def result(pair: Pair[Team, Team]): JValue = {
+  def result(pair: Pair[Team, Team]): Option[Team] = {
+    /*
+     * TODO:
+     * 1) Query stats.nba.com in order to get information about two teams
+     * 2) Perform analytics to determine the result
+     */
+    val team1Js = StatsNBA.team(pair._1)
+    val team2Js = StatsNBA.team(pair._2)
+
+    val prior = Instant.now
+
+    // TODO: add algorithm for calculating the winner
+    Some(pair._1)
+  }
+
+  def resultJV(pair: Pair[Team, Team]): JValue = {
     /*
      * TODO:
      * 1) Query stats.nba.com in order to get information about two teams

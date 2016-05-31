@@ -62,6 +62,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
   get("/team/matchup") {
     contentType="text/html"
 
+    // TODO: pass List[Team] to template instead
     layoutTemplate("team_matchup.html", "teams" -> StatsNBA.teamNameToId.keys.toList)
   }
 
@@ -99,6 +100,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
   get("/player/matchup") {
     contentType="text/html"
 
+    // TODO: pass List[Player] to template instead
     layoutTemplate("player_matchup.html", "players" -> StatsNBA.playerNameToId.keys.toList)
   }
 

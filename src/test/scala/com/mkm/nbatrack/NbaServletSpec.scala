@@ -103,13 +103,13 @@ class NbaServletSpec extends ScalatraSpec with JsonBodySupport { def is =
     jsonBody must_== JNothing
   }
 
-  def postPlayerMatchupValid1 = post("/api/v1/player/matchup", Map("player1" -> "DarkoMilicic", "player2" -> "CarmeloAnthony")) {
+  def postPlayerMatchupValid1 = post("/api/v1/player/matchup", Map("player1" -> "AndreIguodala", "player2" -> "CarmeloAnthony")) {
     status must_== 200
     
     body must contain("CarmeloAnthony")
   }
 
-  def postPlayerMatchupValid2 = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "DarkoMilicic")) {
+  def postPlayerMatchupValid2 = post("/api/v1/player/matchup", Map("player1" -> "LeBronJames", "player2" -> "AndreIguodala")) {
     status must_== 200
 
     body must contain("LeBronJames")

@@ -3,7 +3,7 @@
 
 %h1 Team Matchup:
 
-%form{:action => "/api/v1/team/matchup", :method => "post"}
+%form{:action => "/api/v1/nba/team/matchup", :method => "post"}
   %select{:name => "team1"}
     - for (team <- teams)
       %option{:value => {team}} #{team}

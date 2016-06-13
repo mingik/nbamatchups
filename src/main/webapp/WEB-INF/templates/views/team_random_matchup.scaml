@@ -1,0 +1,14 @@
+-@ val matchup: List[String]
+- attributes("title") = "Random team matchup" 
+
+%h1 Matchup
+%p You've created your first team matchup:
+%br
+%p #{matchup(0)} vs #{matchup(1)}
+
+%form{:action => "/api/v1/nba/team/matchup", :method => "post"}
+  %select{:name => "team1", :hidden => true}
+    %option{:value => {matchup(0)}} #{matchup(0)}
+  %select{:name => "team2", :hidden => true}
+    %option{:value => {matchup(1)}} #{matchup(1)}
+  %input{:type => "submit", :value => "Submit"}

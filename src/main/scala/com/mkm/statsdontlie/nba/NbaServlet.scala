@@ -1,4 +1,4 @@
-package com.mkm.nbatrack
+package com.mkm.statsdontlie.nba
 
 import org.scalatra._
 import org.scalatra.json._
@@ -14,30 +14,30 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 
-class NbaServlet extends NbatrackStack with FutureSupport {
+class NbaServlet extends NbaStack with FutureSupport {
 
   protected implicit def executor = ExecutionContext.global
 
 /////////////////////////// external API //////////////////////////////////
 
-  get("/") {
+  get("/nba") {
     <html>
       <body>
-        <h1>Try <a href="/team/matchup/random">random</a> team matchup!</h1>
-        <h1>Try <a href="/player/matchup/random">random</a> player matchup!</h1>
+        <h1>Try <a href="/nba/team/matchup/random">random</a> team matchup!</h1>
+        <h1>Try <a href="/nba/player/matchup/random">random</a> player matchup!</h1>
 	
-	<h2><a href="/team/matchup">Create your own team matchup. </a></h2>
+	<h2><a href="/nba/team/matchup">Create your own team matchup. </a></h2>
 
 	<br/>
 
-	<h2><a href="/player/matchup">Create your own player matchup. </a></h2>
+	<h2><a href="/nba/player/matchup">Create your own player matchup. </a></h2>
       </body>
     </html>
   }
 
 /////////////////////// Info ///////////////////////////////
 
-  get("/api/v1/team/:team") {
+  get("/api/v1/nba/team/:team") {
     val teamName = params("team")
 
     StatsNBA.teamByName(teamName) match {
@@ -47,7 +47,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
       
   }
 
-  get("/api/v1/player/:player") {
+  get("/api/v1/nba/player/:player") {
     val playerName = params("player")
 
     StatsNBA.playerByName(playerName) match {
@@ -59,14 +59,14 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
 //////////////////////// Matchup ////////////////////////////////
 
-  get("/team/matchup") {
+  get("/nba/team/matchup") {
     contentType="text/html"
 
     // TODO: pass List[Team] to template instead
     layoutTemplate("team_matchup.html", "teams" -> StatsNBA.teamNameToId.keys.toList)
   }
 
-  get("/team/matchup/random") {
+  get("/nba/team/matchup/random") {
     contentType="text/html"
 
     val randomIdxOne = scala.util.Random.nextInt(StatsNBA.teams.size)
@@ -79,7 +79,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     layoutTemplate("random.html", "matchup" -> matchup)
   }
 
-  post("/api/v1/team/matchup") {
+  post("/api/v1/nba/team/matchup") {
 
     val team1Name = params("team1")
     val team2Name = params("team2")
@@ -97,14 +97,14 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
  ////////////////////////////
 
-  get("/player/matchup") {
+  get("/nba/player/matchup") {
     contentType="text/html"
 
     // TODO: pass List[Player] to template instead
     layoutTemplate("player_matchup.html", "players" -> StatsNBA.playerNameToId.keys.toList)
   }
 
-  get("/player/matchup/random") {
+  get("/nba/player/matchup/random") {
     contentType="text/html"
 
     val randomIdxOne = scala.util.Random.nextInt(StatsNBA.players.size)
@@ -117,7 +117,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
     layoutTemplate("random.html", "matchup" -> matchup)
   }
 
-  post("/api/v1/player/matchup") {
+  post("/api/v1/nba/player/matchup") {
 
     val player1Name = params("player1")
     val player2Name = params("player2")
@@ -135,7 +135,7 @@ class NbaServlet extends NbatrackStack with FutureSupport {
 
 //////////////////////// Tournament ////////////////////////////////
 
-  post("/api/v1/team/tournament") {
+  post("/api/v1/nba/team/tournament") {
     val teams = for {
       team <- multiParams("team").toList
       teamId <- StatsNBA.teamId(team)

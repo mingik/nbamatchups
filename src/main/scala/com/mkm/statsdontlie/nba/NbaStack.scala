@@ -1,4 +1,4 @@
-package com.mkm.nbatrack
+package com.mkm.statsdontlie.nba
 
 import org.scalatra._
 import scalate.ScalateSupport
@@ -7,7 +7,7 @@ import org.fusesource.scalate.layout.DefaultLayoutStrategy
 import javax.servlet.http.HttpServletRequest
 import collection.mutable
 
-trait NbatrackStack extends ScalatraServlet with ScalateSupport {
+trait NbaStack extends ScalatraServlet with ScalateSupport {
 
   notFound {
     // remove content type in case it was set through an action
